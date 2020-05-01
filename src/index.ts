@@ -92,7 +92,19 @@ const getWallet = async () => {
     })
     switch (key_format.value) {
       case 1: {
-        const input_keystore = await textInput('Path to keystore file: ')
+        let input_keystore = { value: '' }
+        let errors = 0
+        while (!fs.existsSync(input_keystore.value)) {
+          if (errors > 3) throw Error('Failed to find keystore file')
+          input_keystore = await textInput(
+            `Path to keystore file: absolute path or: \n ${process.env.PWD}/<path_to_keystore>`
+          )
+          input_keystore.value = process.env.PWD + '/' + input_keystore.value
+          if (!fs.existsSync(input_keystore.value)) {
+            console.log(`File doesn't exist ${input_keystore.value}`)
+            errors++
+          }
+        }
         const old_keystore_pass = await textInput(
           'Password to decrypt keystore: ',
           'password'
@@ -100,6 +112,7 @@ const getWallet = async () => {
         wallet = await decryptKeystore(
           input_keystore.value,
           old_keystore_pass.value
+
         )
         console.log('[INFO] Decrypted wallet: ', wallet.address)
         return wallet
@@ -148,10 +161,18 @@ const output = async (wallet: any) => {
     switch (output_format.value) {
       case 1: {
         const keystore_name = await textInput('New keystore name: ')
-        const keystore_pass = await textInput(
-          'New password for keystore: ',
-          'password'
-        )
+        let keystore_pass = { value: '' }
+        let check = { value: '' }
+        while (check.value !== keystore_pass.value || check.value === '') {
+          keystore_pass = await textInput(
+            'New password for keystore: ',
+            'password'
+          )
+          check = await textInput('Repeat password for keystore: ', 'password')
+          if (keystore_pass.value !== check.value) { 
+            console.log('Passwords dont match!')
+          }
+        }
         const output = `${current_dir}/${keystore_name.value}`
         await saveKeystore(wallet, output, keystore_pass.value)
         return

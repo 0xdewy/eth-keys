@@ -1,4 +1,4 @@
-# eth-keys - (alpha)
+# eth-keys
 A command line wrapper around [ethersjs](https://github.com/ethers-io/ethers.js/) to generate and convert ethereum private key types.
   
     mnemonic
@@ -7,10 +7,13 @@ A command line wrapper around [ethersjs](https://github.com/ethers-io/ethers.js/
     new
 
 ## How to use
-Install and then run eth-keys to bring prompt
+Install eth-keys with npm 
 ```
 npm install eth-keys -g
+```
 
+ then run eth-keys
+```
 >> eth-keys 
 
 =========================1==========================
@@ -38,6 +41,7 @@ npm install eth-keys -g
  › keystore
 ✔ New keystore name:  … test.json
 ✔ New password for keystore:  … ********
+✔ Repeat password for keystore:  … *********
 
 [INFO] Saved keystore to  <current-dir>/test.json
 
@@ -57,5 +61,5 @@ npm start
 
 ## Warning 
 ```
-This was made for personal use. Testing should be done if used for whale wallets.
+This code has not been audited.
 ```
