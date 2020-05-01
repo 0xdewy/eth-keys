@@ -1,5 +1,5 @@
 import { ethers } from 'ethers'
-const fs = require('fs')
+import fs from 'fs'
 const prompts = require('prompts')
 
 const privateKeyToWallet = (privKey: string) => {
@@ -42,7 +42,8 @@ const saveKeystore = async (wallet: any, src: string, pass: string) => {
 
 const decryptKeystore = async (keystore_path: string, password: string) => {
   try {
-    const keystore = JSON.parse(fs.readFileSync(keystore_path))
+    const file: Buffer = fs.readFileSync(keystore_path)
+    const keystore = JSON.parse(file.toString())
     const wallet = await ethers.Wallet.fromEncryptedJson(
       JSON.stringify(keystore),
       password
@@ -97,8 +98,9 @@ const getWallet = async () => {
         while (!fs.existsSync(input_keystore.value)) {
           if (errors > 3) throw Error('Failed to find keystore file')
           input_keystore = await textInput(
-            `Path to keystore file: absolute path or: \n ${process.env.PWD}/<path_to_keystore>`
+            `Keystore file: \n ${process.env.PWD}/<keystore_file>`
           )
+          // TODO: check for absolute paths
           input_keystore.value = process.env.PWD + '/' + input_keystore.value
           if (!fs.existsSync(input_keystore.value)) {
             console.log(`File doesn't exist ${input_keystore.value}`)
@@ -112,7 +114,6 @@ const getWallet = async () => {
         wallet = await decryptKeystore(
           input_keystore.value,
           old_keystore_pass.value
-
         )
         console.log('[INFO] Decrypted wallet: ', wallet.address)
         return wallet
@@ -169,7 +170,7 @@ const output = async (wallet: any) => {
             'password'
           )
           check = await textInput('Repeat password for keystore: ', 'password')
-          if (keystore_pass.value !== check.value) { 
+          if (keystore_pass.value !== check.value) {
             console.log('Passwords dont match!')
           }
         }
