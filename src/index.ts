@@ -32,8 +32,9 @@ const mnemonicToWallet = (mnemonic: string) => {
 
 const saveKeystore = async (wallet: any, src: string, pass: string) => {
   try {
-    const encryptedKeystore = await wallet.encrypt(pass)
-    writeFile(src, encryptedKeystore)
+    let encryptedKeystore = JSON.parse(await wallet.encrypt(pass))
+    encryptedKeystore.crypto = encryptedKeystore.Crypto
+    writeFile(src, JSON.stringify(encryptedKeystore))
     console.log('[INFO] Saved keystore to ', src)
   } catch (err) {
     throw Error(err)
