@@ -1,4 +1,6 @@
 import fs from 'fs'
+import path from 'path'
+import os from 'os'
 import { ethers } from 'ethers'
 import prompts from 'prompts'
 
@@ -168,9 +170,15 @@ const output = async (wallet: any) => {
     })
     switch (output_format.value) {
       case 1: {
-        const keystore_name = await textInput('New keystore name: ')
+        const default_keystore_dir = path.join(os.homedir(), '.ethereum', 'keystore')
+        const keystore_dir = await textInput('Keystore directory: ', { initial: default_keystore_dir })
+
+        const default_geth_filename = `UTC--${new Date().toISOString()}--${wallet.address.slice(2).toLowerCase()}.json`
+        const keystore_name = await textInput('New keystore name: ', { initial: default_geth_filename })
+
         let keystore_pass = { value: '' }
         let check = { value: '' }
+
         while (check.value !== keystore_pass.value || check.value === '') {
           keystore_pass = await textInput(
             'New password for keystore: ',
@@ -181,9 +189,10 @@ const output = async (wallet: any) => {
             console.log('Passwords dont match!')
           }
         }
-        const output = `${current_dir}/${keystore_name.value}`
+        const output = path.resolve(path.join(keystore_dir.value, keystore_name.value))
         await saveKeystore(wallet, output, keystore_pass.value)
         return
+
       }
       case 2: {
         console.log(wallet.privateKey)

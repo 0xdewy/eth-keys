@@ -13,6 +13,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
+const os_1 = __importDefault(require("os"));
 const ethers_1 = require("ethers");
 const prompts_1 = __importDefault(require("prompts"));
 const privateKeyToWallet = (privKey) => {
@@ -163,7 +165,10 @@ const output = (wallet) => __awaiter(void 0, void 0, void 0, function* () {
         });
         switch (output_format.value) {
             case 1: {
-                const keystore_name = yield textInput('New keystore name: ');
+                const default_keystore_dir = path_1.default.join(os_1.default.homedir(), '.ethereum', 'keystore');
+                const keystore_dir = yield textInput('Keystore directory: ', { initial: default_keystore_dir });
+                const default_geth_filename = `UTC--${new Date().toISOString()}--${wallet.address.slice(2).toLowerCase()}.json`;
+                const keystore_name = yield textInput('New keystore name: ', { initial: default_geth_filename });
                 let keystore_pass = { value: '' };
                 let check = { value: '' };
                 while (check.value !== keystore_pass.value || check.value === '') {
@@ -173,7 +178,7 @@ const output = (wallet) => __awaiter(void 0, void 0, void 0, function* () {
                         console.log('Passwords dont match!');
                     }
                 }
-                const output = `${current_dir}/${keystore_name.value}`;
+                const output = path_1.default.resolve(path_1.default.join(keystore_dir.value, keystore_name.value));
                 yield saveKeystore(wallet, output, keystore_pass.value);
                 return;
             }
