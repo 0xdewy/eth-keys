@@ -1,6 +1,6 @@
-import { ethers } from 'ethers'
 import fs from 'fs'
-const prompts = require('prompts')
+import { ethers } from 'ethers'
+import prompts from 'prompts'
 
 const privateKeyToWallet = (privKey: string) => {
   try {
@@ -20,10 +20,9 @@ const newPrivateKey = (extraEntropy: string) => {
   }
 }
 
-const mnemonicToWallet = (mnemonic: string) => {
+const mnemonicToWallet = (mnemonic: string, path?: string) => {
   try {
-    const wallet = ethers.Wallet.fromMnemonic(mnemonic)
-    console.log(wallet.path)
+    const wallet = ethers.Wallet.fromMnemonic(mnemonic, path)
     return wallet
   } catch (err) {
     throw Error(err)
@@ -64,12 +63,18 @@ const writeFile = (path: string, data: any) => {
   }
 }
 
-const textInput = async (message: string, type = 'text') => {
+interface TextInputOpts {
+  type?: "text" | "password";
+  initial?: string | number
+}
+
+const textInput = async (message: string, { type = 'text', initial } : TextInputOpts = {}) => {
   try {
     const command = await prompts({
-      type: type,
+      type,
+      message,
+      initial,
       name: 'value',
-      message: message,
       validate: (value: string) => value.length > 0
     })
     return command
@@ -110,7 +115,7 @@ const getWallet = async () => {
         }
         const old_keystore_pass = await textInput(
           'Password to decrypt keystore: ',
-          'password'
+          { type: 'password' }
         )
         wallet = await decryptKeystore(
           input_keystore.value,
@@ -120,15 +125,16 @@ const getWallet = async () => {
         return wallet
       }
       case 2: {
-        const mnemonic = await textInput('Paste the mnemonic: ', 'password')
-        wallet = await mnemonicToWallet(mnemonic.value)
+        const mnemonic = await textInput('Paste the mnemonic: ', { type: 'password' })
+        const path = await textInput('Paste the mnemonic: ', { initial: "m/44'/60'/0'/0/0" })
+        wallet = await mnemonicToWallet(mnemonic.value, path.value)
         console.log('[INFO] Opened wallet: ', wallet.address)
         return wallet
       }
       case 3: {
         const private_key = await textInput(
           'Paste the private key: ',
-          'password'
+          { type: 'password' }
         )
         wallet = await privateKeyToWallet(private_key.value)
         console.log('[INFO] Opened wallet: ', wallet.address)
@@ -168,9 +174,9 @@ const output = async (wallet: any) => {
         while (check.value !== keystore_pass.value || check.value === '') {
           keystore_pass = await textInput(
             'New password for keystore: ',
-            'password'
+            { type: 'password' }
           )
-          check = await textInput('Repeat password for keystore: ', 'password')
+          check = await textInput('Repeat password for keystore: ', { type: 'password' })
           if (keystore_pass.value !== check.value) {
             console.log('Passwords dont match!')
           }

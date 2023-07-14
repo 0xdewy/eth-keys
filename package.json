@@ -31,5 +31,8 @@
     "key",
     "private-key",
     "ethersjs"
-  ]
+  ],
+  "devDependencies": {
+    "@types/prompts": "^2.4.4"
+  }
 }

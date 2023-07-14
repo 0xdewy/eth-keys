@@ -12,9 +12,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const ethers_1 = require("ethers");
 const fs_1 = __importDefault(require("fs"));
-const prompts = require('prompts');
+const ethers_1 = require("ethers");
+const prompts_1 = __importDefault(require("prompts"));
 const privateKeyToWallet = (privKey) => {
     try {
         const wallet = new ethers_1.ethers.Wallet(privKey);
@@ -33,10 +33,9 @@ const newPrivateKey = (extraEntropy) => {
         throw Error(err);
     }
 };
-const mnemonicToWallet = (mnemonic) => {
+const mnemonicToWallet = (mnemonic, path) => {
     try {
-        const wallet = ethers_1.ethers.Wallet.fromMnemonic(mnemonic);
-        console.log(wallet.path);
+        const wallet = ethers_1.ethers.Wallet.fromMnemonic(mnemonic, path);
         return wallet;
     }
     catch (err) {
@@ -74,12 +73,13 @@ const writeFile = (path, data) => {
         throw Error(err);
     }
 };
-const textInput = (message, type = 'text') => __awaiter(void 0, void 0, void 0, function* () {
+const textInput = (message, { type = 'text', initial } = {}) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const command = yield prompts({
-            type: type,
+        const command = yield prompts_1.default({
+            type,
+            message,
+            initial,
             name: 'value',
-            message: message,
             validate: (value) => value.length > 0
         });
         return command;
@@ -91,7 +91,7 @@ const textInput = (message, type = 'text') => __awaiter(void 0, void 0, void 0, 
 const getWallet = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         let wallet;
-        const key_format = yield prompts({
+        const key_format = yield prompts_1.default({
             type: 'select',
             name: 'value',
             message: 'What format is the private key in?\n',
@@ -117,19 +117,20 @@ const getWallet = () => __awaiter(void 0, void 0, void 0, function* () {
                         errors++;
                     }
                 }
-                const old_keystore_pass = yield textInput('Password to decrypt keystore: ', 'password');
+                const old_keystore_pass = yield textInput('Password to decrypt keystore: ', { type: 'password' });
                 wallet = yield decryptKeystore(input_keystore.value, old_keystore_pass.value);
                 console.log('[INFO] Decrypted wallet: ', wallet.address);
                 return wallet;
             }
             case 2: {
-                const mnemonic = yield textInput('Paste the mnemonic: ', 'password');
-                wallet = yield mnemonicToWallet(mnemonic.value);
+                const mnemonic = yield textInput('Paste the mnemonic: ', { type: 'password' });
+                const path = yield textInput('Paste the mnemonic: ', { initial: "m/44'/60'/0'/0/0" });
+                wallet = yield mnemonicToWallet(mnemonic.value, path.value);
                 console.log('[INFO] Opened wallet: ', wallet.address);
                 return wallet;
             }
             case 3: {
-                const private_key = yield textInput('Paste the private key: ', 'password');
+                const private_key = yield textInput('Paste the private key: ', { type: 'password' });
                 wallet = yield privateKeyToWallet(private_key.value);
                 console.log('[INFO] Opened wallet: ', wallet.address);
                 return wallet;
@@ -151,7 +152,7 @@ const getWallet = () => __awaiter(void 0, void 0, void 0, function* () {
 const output = (wallet) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const current_dir = process.env.PWD;
-        const output_format = yield prompts({
+        const output_format = yield prompts_1.default({
             type: 'select',
             name: 'value',
             message: 'What format to output?\n',
@@ -166,8 +167,8 @@ const output = (wallet) => __awaiter(void 0, void 0, void 0, function* () {
                 let keystore_pass = { value: '' };
                 let check = { value: '' };
                 while (check.value !== keystore_pass.value || check.value === '') {
-                    keystore_pass = yield textInput('New password for keystore: ', 'password');
-                    check = yield textInput('Repeat password for keystore: ', 'password');
+                    keystore_pass = yield textInput('New password for keystore: ', { type: 'password' });
+                    check = yield textInput('Repeat password for keystore: ', { type: 'password' });
                     if (keystore_pass.value !== check.value) {
                         console.log('Passwords dont match!');
                     }
