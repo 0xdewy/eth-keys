@@ -42,9 +42,9 @@ const saveKeystore = async (wallet: any, src: string, pass: string) => {
   }
 }
 
-const decryptKeystore = async (keystore_path: string, password: string) => {
+const decryptKeystore = async (keystorePath: string, password: string) => {
   try {
-    const file: Buffer = fs.readFileSync(keystore_path)
+    const file: Buffer = fs.readFileSync(keystorePath)
     const keystore = JSON.parse(file.toString())
     const wallet = await ethers.Wallet.fromEncryptedJson(
       JSON.stringify(keystore),
@@ -88,7 +88,7 @@ const textInput = async (message: string, { type = 'text', initial } : TextInput
 const getWallet = async () => {
   try {
     let wallet
-    const key_format = await prompts({
+    const keyFormat = await prompts({
       type: 'select',
       name: 'value',
       message: 'What format is the private key in?\n',
@@ -99,29 +99,31 @@ const getWallet = async () => {
         { title: 'new', value: 4 }
       ]
     })
-    switch (key_format.value) {
+    switch (keyFormat.value) {
       case 1: {
-        let input_keystore = { value: '' }
+        let inputKeystore = { value: '' }
         let errors = 0
-        while (!fs.existsSync(input_keystore.value)) {
-          if (errors > 3) throw Error('Failed to find keystore file')
-          input_keystore = await textInput(
+        while (!fs.existsSync(inputKeystore.value)) {
+          if (errors > 3) {
+            throw Error('Failed to find keystore file')
+          }
+
+          inputKeystore = await textInput(
             `Keystore file: \n ${process.env.PWD}/<keystore_file>`
           )
-          // TODO: check for absolute paths
-          input_keystore.value = process.env.PWD + '/' + input_keystore.value
-          if (!fs.existsSync(input_keystore.value)) {
-            console.log(`File doesn't exist ${input_keystore.value}`)
+          inputKeystore.value = path.resolve(process.env.PWD ?? '', inputKeystore.value)
+          if (!fs.existsSync(inputKeystore.value)) {
+            console.log(`File doesn't exist ${inputKeystore.value}`)
             errors++
           }
         }
-        const old_keystore_pass = await textInput(
+        const oldKeystorePass = await textInput(
           'Password to decrypt keystore: ',
           { type: 'password' }
         )
         wallet = await decryptKeystore(
-          input_keystore.value,
-          old_keystore_pass.value
+          inputKeystore.value,
+          oldKeystorePass.value
         )
         console.log('[INFO] Decrypted wallet: ', wallet.address)
         return wallet
@@ -134,11 +136,11 @@ const getWallet = async () => {
         return wallet
       }
       case 3: {
-        const private_key = await textInput(
+        const privateKey = await textInput(
           'Paste the private key: ',
           { type: 'password' }
         )
-        wallet = await privateKeyToWallet(private_key.value)
+        wallet = await privateKeyToWallet(privateKey.value)
         console.log('[INFO] Opened wallet: ', wallet.address)
         return wallet
       }
@@ -158,8 +160,7 @@ const getWallet = async () => {
 
 const output = async (wallet: any) => {
   try {
-    const current_dir = process.env.PWD
-    const output_format = await prompts({
+    const outputFormat = await prompts({
       type: 'select',
       name: 'value',
       message: 'What format to output?\n',
@@ -168,29 +169,29 @@ const output = async (wallet: any) => {
         { title: 'private key', value: 2 }
       ]
     })
-    switch (output_format.value) {
+    switch (outputFormat.value) {
       case 1: {
-        const default_keystore_dir = path.join(os.homedir(), '.ethereum', 'keystore')
-        const keystore_dir = await textInput('Keystore directory: ', { initial: default_keystore_dir })
+        const defaultKeystoreDir = path.join(os.homedir(), '.ethereum', 'keystore')
+        const keystoreDir = await textInput('Keystore directory: ', { initial: defaultKeystoreDir })
 
-        const default_geth_filename = `UTC--${new Date().toISOString()}--${wallet.address.slice(2).toLowerCase()}.json`
-        const keystore_name = await textInput('New keystore name: ', { initial: default_geth_filename })
+        const defaultGethFilename = `UTC--${new Date().toISOString()}--${wallet.address.slice(2).toLowerCase()}.json`
+        const keystoreName = await textInput('New keystore name: ', { initial: defaultGethFilename })
 
-        let keystore_pass = { value: '' }
+        let keystorePass = { value: '' }
         let check = { value: '' }
 
-        while (check.value !== keystore_pass.value || check.value === '') {
-          keystore_pass = await textInput(
+        while (check.value !== keystorePass.value || check.value === '') {
+          keystorePass = await textInput(
             'New password for keystore: ',
             { type: 'password' }
           )
           check = await textInput('Repeat password for keystore: ', { type: 'password' })
-          if (keystore_pass.value !== check.value) {
+          if (keystorePass.value !== check.value) {
             console.log('Passwords dont match!')
           }
         }
-        const output = path.resolve(path.join(keystore_dir.value, keystore_name.value))
-        await saveKeystore(wallet, output, keystore_pass.value)
+        const output = path.resolve(keystoreDir.value, keystoreName.value)
+        await saveKeystore(wallet, output, keystorePass.value)
         return
 
       }

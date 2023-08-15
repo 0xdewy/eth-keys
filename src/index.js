@@ -55,9 +55,9 @@ const saveKeystore = (wallet, src, pass) => __awaiter(void 0, void 0, void 0, fu
         throw Error(err);
     }
 });
-const decryptKeystore = (keystore_path, password) => __awaiter(void 0, void 0, void 0, function* () {
+const decryptKeystore = (keystorePath, password) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const file = fs_1.default.readFileSync(keystore_path);
+        const file = fs_1.default.readFileSync(keystorePath);
         const keystore = JSON.parse(file.toString());
         const wallet = yield ethers_1.ethers.Wallet.fromEncryptedJson(JSON.stringify(keystore), password);
         return wallet;
@@ -91,9 +91,10 @@ const textInput = (message, { type = 'text', initial } = {}) => __awaiter(void 0
     }
 });
 const getWallet = () => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
         let wallet;
-        const key_format = yield prompts_1.default({
+        const keyFormat = yield prompts_1.default({
             type: 'select',
             name: 'value',
             message: 'What format is the private key in?\n',
@@ -104,23 +105,23 @@ const getWallet = () => __awaiter(void 0, void 0, void 0, function* () {
                 { title: 'new', value: 4 }
             ]
         });
-        switch (key_format.value) {
+        switch (keyFormat.value) {
             case 1: {
-                let input_keystore = { value: '' };
+                let inputKeystore = { value: '' };
                 let errors = 0;
-                while (!fs_1.default.existsSync(input_keystore.value)) {
-                    if (errors > 3)
+                while (!fs_1.default.existsSync(inputKeystore.value)) {
+                    if (errors > 3) {
                         throw Error('Failed to find keystore file');
-                    input_keystore = yield textInput(`Keystore file: \n ${process.env.PWD}/<keystore_file>`);
-                    // TODO: check for absolute paths
-                    input_keystore.value = process.env.PWD + '/' + input_keystore.value;
-                    if (!fs_1.default.existsSync(input_keystore.value)) {
-                        console.log(`File doesn't exist ${input_keystore.value}`);
+                    }
+                    inputKeystore = yield textInput(`Keystore file: \n ${process.env.PWD}/<keystore_file>`);
+                    inputKeystore.value = path_1.default.resolve((_a = process.env.PWD) !== null && _a !== void 0 ? _a : '', inputKeystore.value);
+                    if (!fs_1.default.existsSync(inputKeystore.value)) {
+                        console.log(`File doesn't exist ${inputKeystore.value}`);
                         errors++;
                     }
                 }
-                const old_keystore_pass = yield textInput('Password to decrypt keystore: ', { type: 'password' });
-                wallet = yield decryptKeystore(input_keystore.value, old_keystore_pass.value);
+                const oldKeystorePass = yield textInput('Password to decrypt keystore: ', { type: 'password' });
+                wallet = yield decryptKeystore(inputKeystore.value, oldKeystorePass.value);
                 console.log('[INFO] Decrypted wallet: ', wallet.address);
                 return wallet;
             }
@@ -132,8 +133,8 @@ const getWallet = () => __awaiter(void 0, void 0, void 0, function* () {
                 return wallet;
             }
             case 3: {
-                const private_key = yield textInput('Paste the private key: ', { type: 'password' });
-                wallet = yield privateKeyToWallet(private_key.value);
+                const privateKey = yield textInput('Paste the private key: ', { type: 'password' });
+                wallet = yield privateKeyToWallet(privateKey.value);
                 console.log('[INFO] Opened wallet: ', wallet.address);
                 return wallet;
             }
@@ -153,8 +154,8 @@ const getWallet = () => __awaiter(void 0, void 0, void 0, function* () {
 });
 const output = (wallet) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const current_dir = process.env.PWD;
-        const output_format = yield prompts_1.default({
+        const currentDir = process.env.PWD;
+        const outputFormat = yield prompts_1.default({
             type: 'select',
             name: 'value',
             message: 'What format to output?\n',
@@ -163,23 +164,23 @@ const output = (wallet) => __awaiter(void 0, void 0, void 0, function* () {
                 { title: 'private key', value: 2 }
             ]
         });
-        switch (output_format.value) {
+        switch (outputFormat.value) {
             case 1: {
-                const default_keystore_dir = path_1.default.join(os_1.default.homedir(), '.ethereum', 'keystore');
-                const keystore_dir = yield textInput('Keystore directory: ', { initial: default_keystore_dir });
-                const default_geth_filename = `UTC--${new Date().toISOString()}--${wallet.address.slice(2).toLowerCase()}.json`;
-                const keystore_name = yield textInput('New keystore name: ', { initial: default_geth_filename });
-                let keystore_pass = { value: '' };
+                const defaultKeystoreDir = path_1.default.join(os_1.default.homedir(), '.ethereum', 'keystore');
+                const keystoreDir = yield textInput('Keystore directory: ', { initial: defaultKeystoreDir });
+                const defaultGethFilename = `UTC--${new Date().toISOString()}--${wallet.address.slice(2).toLowerCase()}.json`;
+                const keystoreName = yield textInput('New keystore name: ', { initial: defaultGethFilename });
+                let keystorePass = { value: '' };
                 let check = { value: '' };
-                while (check.value !== keystore_pass.value || check.value === '') {
-                    keystore_pass = yield textInput('New password for keystore: ', { type: 'password' });
+                while (check.value !== keystorePass.value || check.value === '') {
+                    keystorePass = yield textInput('New password for keystore: ', { type: 'password' });
                     check = yield textInput('Repeat password for keystore: ', { type: 'password' });
-                    if (keystore_pass.value !== check.value) {
+                    if (keystorePass.value !== check.value) {
                         console.log('Passwords dont match!');
                     }
                 }
-                const output = path_1.default.resolve(path_1.default.join(keystore_dir.value, keystore_name.value));
-                yield saveKeystore(wallet, output, keystore_pass.value);
+                const output = path_1.default.resolve(keystoreDir.value, keystoreName.value);
+                yield saveKeystore(wallet, output, keystorePass.value);
                 return;
             }
             case 2: {
