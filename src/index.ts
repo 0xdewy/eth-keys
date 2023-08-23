@@ -70,7 +70,7 @@ interface TextInputOpts {
   initial?: string | number
 }
 
-const textInput = async (message: string, { type = 'text', initial } : TextInputOpts = {}) => {
+const textInput = async (message: string, { type = 'text', initial }: TextInputOpts = {}) => {
   try {
     const command = await prompts({
       type,
@@ -81,7 +81,25 @@ const textInput = async (message: string, { type = 'text', initial } : TextInput
     })
     return command
   } catch (err) {
-    throw Error(err)
+    throw new Error(err)
+  }
+}
+
+interface ConfirmInputOpts {
+  initial?: boolean
+}
+
+const confirmInput = async (message: string, { initial = true }: ConfirmInputOpts = {}) => {
+  try {
+    const command = await prompts({
+      type: 'confirm',
+      message,
+      initial,
+      name: 'value',
+    })
+    return command
+  } catch (err) {
+    throw new Error(err)
   }
 }
 
@@ -113,7 +131,7 @@ const getWallet = async () => {
           )
           inputKeystore.value = path.resolve(process.env.PWD ?? '', inputKeystore.value)
           if (!fs.existsSync(inputKeystore.value)) {
-            console.log(`File doesn't exist ${inputKeystore.value}`)
+            console.error(`[ERROR] File doesn't exist ${inputKeystore.value}`)
             errors++
           }
         }
@@ -174,6 +192,29 @@ const output = async (wallet: any) => {
         const defaultKeystoreDir = path.join(os.homedir(), '.ethereum', 'keystore')
         const keystoreDir = await textInput('Keystore directory: ', { initial: defaultKeystoreDir })
 
+        let keystoreDirStat;
+        try {
+          keystoreDirStat = fs.statSync(keystoreDir.value);
+        } catch {
+          const confirmCreate = await confirmInput(`Directory ${keystoreDir.value} doesn't exist. Do you wish to create it?`)
+
+          if (!confirmCreate.value) {
+            throw new Error('Keystore directory creation aborted')
+          }
+
+          try {
+            fs.mkdirSync(keystoreDir.value, { recursive: true })
+            keystoreDirStat = fs.statSync(keystoreDir.value);
+          } catch(err) {
+            console.error(`[ERROR] ${err}`)
+            throw new Error('Failed to create the keystore directory')
+          }
+        }
+
+        if (!keystoreDirStat.isDirectory()) {
+            throw new Error(`Path ${keystoreDir.value} is not a directory`)
+        }
+
         const defaultGethFilename = `UTC--${new Date().toISOString()}--${wallet.address.slice(2).toLowerCase()}.json`
         const keystoreName = await textInput('New keystore name: ', { initial: defaultGethFilename })
 
@@ -187,7 +228,7 @@ const output = async (wallet: any) => {
           )
           check = await textInput('Repeat password for keystore: ', { type: 'password' })
           if (keystorePass.value !== check.value) {
-            console.log('Passwords dont match!')
+            console.error("[ERROR] Passwords don't match!")
           }
         }
         const output = path.resolve(keystoreDir.value, keystoreName.value)

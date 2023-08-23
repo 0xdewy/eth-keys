@@ -87,7 +87,21 @@ const textInput = (message, { type = 'text', initial } = {}) => __awaiter(void 0
         return command;
     }
     catch (err) {
-        throw Error(err);
+        throw new Error(err);
+    }
+});
+const confirmInput = (message, { initial = true } = {}) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const command = yield prompts_1.default({
+            type: 'confirm',
+            message,
+            initial,
+            name: 'value',
+        });
+        return command;
+    }
+    catch (err) {
+        throw new Error(err);
     }
 });
 const getWallet = () => __awaiter(void 0, void 0, void 0, function* () {
@@ -116,7 +130,7 @@ const getWallet = () => __awaiter(void 0, void 0, void 0, function* () {
                     inputKeystore = yield textInput(`Keystore file: \n ${process.env.PWD}/<keystore_file>`);
                     inputKeystore.value = path_1.default.resolve((_a = process.env.PWD) !== null && _a !== void 0 ? _a : '', inputKeystore.value);
                     if (!fs_1.default.existsSync(inputKeystore.value)) {
-                        console.log(`File doesn't exist ${inputKeystore.value}`);
+                        console.error(`[ERROR] File doesn't exist ${inputKeystore.value}`);
                         errors++;
                     }
                 }
@@ -167,6 +181,27 @@ const output = (wallet) => __awaiter(void 0, void 0, void 0, function* () {
             case 1: {
                 const defaultKeystoreDir = path_1.default.join(os_1.default.homedir(), '.ethereum', 'keystore');
                 const keystoreDir = yield textInput('Keystore directory: ', { initial: defaultKeystoreDir });
+                let keystoreDirStat;
+                try {
+                    keystoreDirStat = fs_1.default.statSync(keystoreDir.value);
+                }
+                catch (_b) {
+                    const confirmCreate = yield confirmInput(`Directory ${keystoreDir.value} doesn't exist. Do you wish to create it?`);
+                    if (!confirmCreate.value) {
+                        throw new Error('Keystore directory creation aborted');
+                    }
+                    try {
+                        fs_1.default.mkdirSync(keystoreDir.value, { recursive: true });
+                        keystoreDirStat = fs_1.default.statSync(keystoreDir.value);
+                    }
+                    catch (err) {
+                        console.error(`[ERROR] ${err}`);
+                        throw new Error('Failed to create the keystore directory');
+                    }
+                }
+                if (!keystoreDirStat.isDirectory()) {
+                    throw new Error(`Path ${keystoreDir.value} is not a directory`);
+                }
                 const defaultGethFilename = `UTC--${new Date().toISOString()}--${wallet.address.slice(2).toLowerCase()}.json`;
                 const keystoreName = yield textInput('New keystore name: ', { initial: defaultGethFilename });
                 let keystorePass = { value: '' };
@@ -175,7 +210,7 @@ const output = (wallet) => __awaiter(void 0, void 0, void 0, function* () {
                     keystorePass = yield textInput('New password for keystore: ', { type: 'password' });
                     check = yield textInput('Repeat password for keystore: ', { type: 'password' });
                     if (keystorePass.value !== check.value) {
-                        console.log('Passwords dont match!');
+                        console.error("[ERROR] Passwords don't match!");
                     }
                 }
                 const output = path_1.default.resolve(keystoreDir.value, keystoreName.value);
