@@ -130,7 +130,7 @@ const getWallet = async () => {
       }
       case 2: {
         const mnemonic = await textInput('Paste the mnemonic: ', { type: 'password' })
-        const path = await textInput('Paste the mnemonic: ', { initial: "m/44'/60'/0'/0/0" })
+        const path = await textInput('Choose the derivation path: ', { initial: "m/44'/60'/0'/0/0" })
         wallet = await mnemonicToWallet(mnemonic.value, path.value)
         console.log('[INFO] Opened wallet: ', wallet.address)
         return wallet

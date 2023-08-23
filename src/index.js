@@ -127,7 +127,7 @@ const getWallet = () => __awaiter(void 0, void 0, void 0, function* () {
             }
             case 2: {
                 const mnemonic = yield textInput('Paste the mnemonic: ', { type: 'password' });
-                const path = yield textInput('Paste the mnemonic: ', { initial: "m/44'/60'/0'/0/0" });
+                const path = yield textInput('Choose the derivation path: ', { initial: "m/44'/60'/0'/0/0" });
                 wallet = yield mnemonicToWallet(mnemonic.value, path.value);
                 console.log('[INFO] Opened wallet: ', wallet.address);
                 return wallet;
@@ -154,7 +154,6 @@ const getWallet = () => __awaiter(void 0, void 0, void 0, function* () {
 });
 const output = (wallet) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const currentDir = process.env.PWD;
         const outputFormat = yield prompts_1.default({
             type: 'select',
             name: 'value',
