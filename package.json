@@ -1,6 +1,6 @@
 {
   "name": "eth-keys",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Ethereum private key format converter",
   "main": "index.js",
   "repository": "git@github.com:kyledewy/eth-keys.git",
@@ -31,5 +31,8 @@
     "key",
     "private-key",
     "ethersjs"
-  ]
+  ],
+  "devDependencies": {
+    "@types/prompts": "^2.4.4"
+  }
 }
