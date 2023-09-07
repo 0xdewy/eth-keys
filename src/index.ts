@@ -149,7 +149,7 @@ const getWallet = async () => {
       case 2: {
         const mnemonic = await textInput('Paste the mnemonic: ', { type: 'password' })
         const path = await textInput('Choose the derivation path: ', { initial: "m/44'/60'/0'/0/0" })
-        wallet = await mnemonicToWallet(mnemonic.value, path.value)
+        wallet = mnemonicToWallet(mnemonic.value, path.value)
         console.log('[INFO] Opened wallet: ', wallet.address)
         return wallet
       }
@@ -158,7 +158,7 @@ const getWallet = async () => {
           'Paste the private key: ',
           { type: 'password' }
         )
-        wallet = await privateKeyToWallet(privateKey.value)
+        wallet = privateKeyToWallet(privateKey.value)
         console.log('[INFO] Opened wallet: ', wallet.address)
         return wallet
       }
@@ -252,7 +252,7 @@ const main = async () => {
     if (!wallet) throw Error('Failed to parse wallet')
     output(wallet)
   } catch (err) {
-    console.log(err)
+    console.error(err)
   }
 }
 
